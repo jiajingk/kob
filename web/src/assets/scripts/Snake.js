@@ -22,6 +22,16 @@ export class Snake extends GameObject {
 
         this.step = 0; // number of steps that snake passed
         this.eps = 0.01;
+
+        this.eye_direction = 0;
+        if (this.id === 1) this.eye_direction = 2;
+
+        this.eye_dx = [
+            [-1, 1], [1, 1], [1, -1], [-1, -1]
+        ]
+        this.eye_dy = [
+            [-1, -1], [-1, 1], [1, 1], [1, -1]
+        ]
     } 
 
     set_direction(d) {
@@ -44,6 +54,7 @@ export class Snake extends GameObject {
             this.cells[0].r + this.dr[d], 
             this.cells[0].c + this.dc[d], 
         );
+        this.eye_direction = d;
         // reinitalize the direction as move already taken
         this.direction = -1; 
         this.status = "move";
@@ -52,6 +63,10 @@ export class Snake extends GameObject {
         const k = this.cells.length;
         for (let i = k; i > 0; i -- ) {
             this.cells[i] = JSON.parse(JSON.stringify(this.cells[i - 1]));
+        }
+
+        if (!this.gamemap.check_valid(this.next_cell)) {
+            this.status = "die";
         }
     }
 
@@ -95,21 +110,33 @@ export class Snake extends GameObject {
         const L = this.gamemap.L;
         const ctx = this.gamemap.ctx;
         ctx.fillStyle = this.color;
-        ctx.beginPath();
+        if (this.status === "die") {
+            ctx.fillStyle = "white";
+        }
+
         for (const cell of this.cells) {
             ctx.beginPath();
-            ctx.arc(cell.x * L, cell.y * L, L / 2, 0, Math.PI * 2);
+            ctx.arc(cell.x * L, cell.y * L, L / 2 * 0.8, 0, Math.PI * 2);
             ctx.fill();
         }
         for (let i = 1; i < this.cells.length; i ++ ) {
             const a = this.cells[i - 1], b = this.cells[i];
             if (Math.abs(a.x - b.x) < this.eps && Math.abs(a.y - b.y) < this.eps ) {continue;}
             if (Math.abs(a.x - b.x) < this.eps) {
-                ctx.fillRect((a.x - 0.5) * L, Math.min(a.y, b.y) * L, L, Math.abs(a.y - b.y) * L);
+                ctx.fillRect((a.x - 0.4) * L, Math.min(a.y, b.y) * L, L * 0.8, Math.abs(a.y - b.y) * L );
             } else {
-                ctx.fillRect( Math.min(a.x, b.x) * L, (a.y - 0.5) * L, Math.abs(a.x - b.x) * L, L);
+                ctx.fillRect( Math.min(a.x, b.x) * L, (a.y - 0.4) * L, Math.abs(a.x - b.x) * L, L * 0.8);
             }
 
+        }
+
+        ctx.fillStyle = "black";
+        for (let i = 0; i < 2; i ++ ) {
+            const eye_x = (this.cells[0].x + this.eye_dx[this.eye_direction][i] * 0.15) * L ;
+            const eye_y = (this.cells[0].y + this.eye_dy[this.eye_direction][i] * 0.15) * L ;
+            ctx.beginPath();
+            ctx.arc(eye_x, eye_y, L * 0.05, 0, Math.PI * 2);
+            ctx.fill();
         }
 
     }
